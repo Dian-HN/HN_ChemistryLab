@@ -363,11 +363,14 @@ class HNchemistry(fr5robot):
         time.sleep(2)
         string = ' '.join(map(str, shaobei_xy_output))
         fr5_B.F101_put_01(string, "xn" , "2" , False, is_display = False)
-
+        fr5_B.MoveL(0.0, 0.0, 300.0)
+        
 
 
         ################ step3：从仪器区抓起三颈烧瓶放到水浴锅夹持 ##############
-
+        string = ' '.join(map(str, sanjing_xy_input))
+        # 三颈烧瓶抓取方式需要修改与测量 TODO
+        fr5_B.F101_catch_02(string, "xp" , "4" , False, is_display = False)
 
 
 
