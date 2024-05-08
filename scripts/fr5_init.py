@@ -25,13 +25,13 @@ class fr5robot:
         self.index = index
         # 夹爪初始化 大寰
         self.robot.SetGripperConfig(4, 0, 0, 1)
-        time.sleep(0.5)
+        time.sleep(1)
         # self.robot.ActGripper(1, 0)
         # time.sleep(0.5)
         self.robot.ActGripper(1, 1)
-        time.sleep(0.5)
+        time.sleep(2)
         self.robot.MoveGripper(1, 100, 50, 10, 10000, 1)
-        time.sleep(0.5)
+        time.sleep(1)
 
         print("夹爪初始化完成")
         rospy.init_node('fr5_main', anonymous=True)
@@ -99,7 +99,7 @@ class fr5robot:
             0,
             blendR = -1.0,
         )
-        print('cuowuma',ret)
+        # print('cuowuma',ret)
 
     def point_safe_move(self, start_catch_position, v=60.0, height=250.0, last_v = 0):  
         '''
@@ -111,9 +111,9 @@ class fr5robot:
         # 如果查询失败的话，重新查询
         while( type(end_height_from_sdk) != tuple):
             end_height_from_sdk = self.robot.GetActualToolFlangePose(0)
-            print('failed to get end_height_from_sdk1')
+            print('when executing point_safe_move,failed to get end_height_from_sdk1')
             time.sleep(0.5)
-        print('end_height_from_sdk:',end_height_from_sdk)
+        # print('end_height_from_sdk:',end_height_from_sdk)
         if len(end_height_from_sdk) == 2:
             end_height = end_height_from_sdk[1]
         if end_height[2] < height:
@@ -126,9 +126,9 @@ class fr5robot:
         # 如果查询失败的话，重新查询
         while( type(end_height_from_sdk) != tuple):
             end_height_from_sdk = self.robot.GetActualToolFlangePose(0)
-            print('failed to get end_height_from_sdk2')
+            print('when executing point_safe_move,failed to get end_height_from_sdk2')
             time.sleep(0.5)
-        print('end_height_from_sdk:',end_height_from_sdk)
+        # print('end_height_from_sdk:',end_height_from_sdk)
         if len(end_height_from_sdk) == 2:
             end_height = end_height_from_sdk[1]
         if (
@@ -145,9 +145,9 @@ class fr5robot:
         # 如果查询失败的话，重新查询
         while( type(end_height_from_sdk) != tuple):
             end_height_from_sdk = self.robot.GetActualToolFlangePose(0)
-            print('failed to get end_height_from_sdk3')
+            print('when executing point_safe_move,failed to get end_height_from_sdk3')
             time.sleep(0.5)
-        print('end_height_from_sdk:',end_height_from_sdk)
+        # print('end_height_from_sdk:',end_height_from_sdk)
         if len(end_height_from_sdk) == 2:
             end_height = end_height_from_sdk[1]
         if last_v == 0:
@@ -158,3 +158,190 @@ class fr5robot:
             self.MoveL(
                 0.0, 0.0, (start_catch_position[2] - end_height[2] ), last_v
         )
+
+    def Safe_move(self, start_catch_position, dir, v=30.0):
+        temp_path = []
+        start_interpolation_path = []
+        # get end pos
+        start_position = self.robot.GetActualToolFlangePose(0)
+        # print(start_position)
+        # 进行处理 把首位0删除
+        start_position = start_position[-6:]
+        # save initial path point
+        start_interpolation_path += [
+            start_position,
+        ]
+        # add one path ---point z upto 250.0 rxryrz unfollowed
+        temp_path = Add_path(
+            start_position,
+            start_position[0],
+            start_position[1],
+            250.0,
+            start_position[3],
+            start_position[4],
+            start_position[5],
+        )
+        start_interpolation_path += [temp_path]
+        if dir == "yn":
+            print()
+            # add one path ---point xy move to object rxryrz followed(y bias = 100.0)
+            temp_path = Add_path(
+                temp_path,
+                start_catch_position[0],
+                start_catch_position[1] + 100.0,
+                250.0,
+                start_catch_position[3],
+                start_catch_position[4],
+                start_catch_position[5],
+            )
+            start_interpolation_path += [temp_path]
+            # add one path ---point z down to object
+            temp_path = Add_path(
+                temp_path,
+                temp_path[0],
+                temp_path[1],
+                start_catch_position[2],
+                temp_path[3],
+                temp_path[4],
+                temp_path[5],
+            )
+            start_interpolation_path += [temp_path]
+            # add one path ---final position
+            temp_path = Add_path(
+                temp_path,
+                temp_path[0],
+                temp_path[1] - 100.0,
+                start_catch_position[2],
+                temp_path[3],
+                temp_path[4],
+                temp_path[5],
+            )
+            start_interpolation_path += [temp_path]
+        elif dir == "xn":
+            print()
+            # add one path ---point xy move to object rxryrz followed(y bias = 100.0)
+            temp_path = Add_path(
+                temp_path,
+                start_catch_position[0] + 100.0,
+                start_catch_position[1],
+                250.0,
+                start_catch_position[3],
+                start_catch_position[4],
+                start_catch_position[5],
+            )
+            start_interpolation_path += [temp_path]
+            # add one path ---point z down to object
+            temp_path = Add_path(
+                temp_path,
+                temp_path[0],
+                temp_path[1],
+                start_catch_position[2],
+                temp_path[3],
+                temp_path[4],
+                temp_path[5],
+            )
+            start_interpolation_path += [temp_path]
+            # add one path ---final position
+            temp_path = Add_path(
+                temp_path,
+                temp_path[0] - 100.0,
+                temp_path[1],
+                start_catch_position[2],
+                temp_path[3],
+                temp_path[4],
+                temp_path[5],
+            )
+            start_interpolation_path += [temp_path]
+        else:
+            exit()
+        print(start_interpolation_path)
+        # 执行移动
+        for i in range(len(start_interpolation_path)):
+            self.robot.MoveCart(
+                start_interpolation_path[i], 0, 0, 0.0, 0.0, v, -1.0, -1
+            )
+
+    # 参数为容器半径，容器上平面离夹爪中心高度，角度增量及方向，指令周期，最大旋转角度
+    def pour(self, r, h, i=-2, max_angel=90, rate = 100.0, v = 70.0, upright = 1, shake = 1):
+        rate /= 100
+        types = {
+            "100ml": {"diameter": 10, "height": 20},
+            "200ml": {"diameter": 15, "height": 25},
+            "250ml": {"diameter": 12, "height": 22},
+        }
+        # 伺服运动参数预置
+        t=0.002
+        eP0 = [0.000, 0.000, 0.000, 0.000]
+        dP0 = [1.000, 1.000, 1.000, 1.000, 1.000, 1.000]
+        gain = [1.0, 1.0, 0.0, 0.0, 0.0, 0.0]  # 位姿增量比例系数，仅在增量运动下生效，范围[0~1]
+        P1 = self.robot.GetActualTCPPose(0)[1]
+        J1 = self.robot.GetActualJointPosDegree(0)[1]
+
+        # 计算旋转参数
+        R = np.sqrt(r**2 + h**2)
+        phi = np.arctan(h / r)
+        l = np.pi * R / 180  # 弧长（x理论增量）
+        # 工具坐标笛卡尔增量
+        n_pos = [
+            float(2.2 * l * np.sin(phi) * np.sign(i)) * rate,
+            float(2.2 * l * np.cos(phi)) * rate,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+        ]
+
+        joint_pos_difference = 0  # 确保进入倾倒循环
+        
+        # 在末端关节伺服旋转时，执行空间伺服运动以确保仪器出料口位置稳定
+        # 可通过修改单步时延t的大小来调整旋转速度
+        while np.abs(joint_pos_difference) < max_angel:
+            self.robot.ServoCart(2, n_pos, gain, 0.0, 0.0, t, 0.0, 0.0)  # 工具笛卡尔坐标增量移动
+
+            joint_pos = self.robot.GetActualJointPosDegree(0)
+            joint_pos = joint_pos[1]
+            joint_pos[5] = joint_pos[5] + i * rate
+
+            self.robot.ServoJ(joint_pos, 0.0, 0.0, t, 0.0, 0.0)  # 关节角增量移动
+
+            time.sleep(t)
+
+            # 更新差值
+            joint_pos_difference = joint_pos[5] - J1[5]
+
+        joint_pos = self.robot.GetActualJointPosDegree(0)[1]
+        pos_record = self.robot.GetActualTCPPose(0)[1]
+        max_angel = joint_pos[5] + 3.0
+        min_angel = joint_pos[5] - 3.0
+        shakes = 0
+        if shake == 1:
+            while shakes < 200:
+                self.robot.ServoJ(joint_pos, 0.0, 0.0, t, 0.0, 0.0)
+                if joint_pos[5] > max_angel:
+                    i = -1
+                if joint_pos[5] < min_angel:
+                    i = 1
+                joint_pos[5] += i
+
+                new_pos = self.robot.GetActualJointPosDegree(0)[1]
+                time.sleep(0.002)
+                shakes += 1
+            self.robot.MoveCart(pos_record, 0, 0, 0.0, 0.0, v, -1.0, -1)
+            
+        # 回到倾倒起点，有些场景下可能需要，暂时保留
+        # self.MoveL(0.0, 0.0, (300 - self.robot.GetActualTCPPose(0)[3]), 50.0)
+        # time.sleep(0.5)
+        
+        # 是否需要上抬以规避倾倒仪器回归水平位时的碰撞
+        if upright == 0:
+            return
+        else:
+            P1 = self.robot.GetActualTCPPose(0)[1]
+            P1[2] += 60.0
+            if np.abs(P1[5]) > 80.0 and np.abs(P1[5]) < 170.0:
+                P1 = P1[0:3]
+                P1 += [90.0, 0.0, -90.0]
+            else:
+                P1 = P1[0:3]
+                P1 += [90.0, 0.0, 0.0]
+            self.robot.MoveCart(P1, 0, 0, 0.0, 0.0, v, -1.0, -1)
