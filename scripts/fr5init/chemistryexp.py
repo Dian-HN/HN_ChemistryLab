@@ -41,16 +41,18 @@ b_bias = 150.0
 '''
 仪器区的初始位置
 '''
-liangtong_xy_input = [600, 200] # 用于称量液体浓盐酸的量筒，对于B
-shaobei_xy_input = [600, 100] # 用于称量固体C的烧杯，对于B
+liangtong_xy_input = [600, 0] # 用于称量液体浓盐酸的量筒，对于B
+shaobei_xy_input = [600, -100] # 用于称量固体C的烧杯，对于B
 sanjing_xy_input = [520, -300] # 用于反应容器的三颈烧瓶，对于B
-liangtong_xy_output = [-500, -200]
+liangtong_xy_output_B = [-500, -200]
+# liangtong_xy_output_A = [500, -200]
 shaobei_xy_output = [-500, -300]
 sanjing_xy_output = [220, -560, 220]
 liangtong_xy_used = [600, 0]
 shaobei_xy_used = [600, -100]
 yindaoqi_xy = [570,-300]
-liangtong_xy_kmno4_givetoB = [-200, -700]# 装有kmno4的量筒，需要递交给A，需要放在这个地方等待递交
+liangtong_xy_kmno4_givetoA = [-200, -700]# 装有kmno4的量筒，需要递交给A，需要放在这个地方等待递交
+liangtong_xy_kmno4_getfromB = [200, -600]
 liangtong_xy_kmno4_puttopump = [-600, -300]
 
 '''
@@ -470,7 +472,7 @@ class HNchemistry(fr5robot):
         p3_auto_weight = p3_auto_weight[1]
         fr5_B.robot.MoveJ(j3_auto_weight,0,0,p3_auto_weight,20.0,0,100.0,eP1,-1.0,0,oP1)
         time.sleep(2)
-        string = ' '.join(map(str, liangtong_xy_output))
+        string = ' '.join(map(str, liangtong_xy_output_B))
         fr5_B.F101_put_01(string, "xn" , "2" , False, is_display = False)
         fr5_B.MoveL(0.0, 0.0, 300.0)
         fr5_B.Go_to_start_zone()
@@ -540,7 +542,7 @@ class HNchemistry(fr5robot):
 
         ################ step4：将量筒中液体倒入水浴锅 ########################
         # 机械臂B抓取称量后的量筒
-        string = ' '.join(map(str, liangtong_xy_output))
+        string = ' '.join(map(str, liangtong_xy_output_B))
         fr5_B.F101_catch_02(string, "xn" , "3" , False, is_display = False)
         fr5_B.MoveL(0.0, 0.0, 150.0)
         
@@ -607,17 +609,36 @@ class HNchemistry(fr5robot):
         fr5_B.robot.MoveJ(j4_auto_weight,0,0,p4_auto_weight,20.0,0,100.0,eP1,-1.0,0,oP1)
         time.sleep(2)
         
+        string = ' '.join(map(str, liangtong_xy_output_B))
+        fr5_B.F101_put_01(string, "xn" , "2" , False, is_display = False)
+        time.sleep(2)
+        fr5_B.Go_to_start_zone()
+        
+        string = ' '.join(map(str, liangtong_xy_output_B))
+        fr5_B.F101_catch_02(string, "xn" , "2" , False, is_display = False)
+        fr5_B.MoveL(0.,0.,200.)
+        
+        # 去复位的位置
+        p4_auto_weight = fr5_B.robot.GetForwardKin(j4_auto_weight)
+        while( type(p4_auto_weight) != tuple):
+                p4_auto_weight = fr5_B.robot.GetForwardKin(j4_auto_weight)
+                time.sleep(0.1)
+        p4_auto_weight = p4_auto_weight[1]
+        fr5_B.robot.MoveJ(j4_auto_weight,0,0,p4_auto_weight,20.0,0,100.0,eP1,-1.0,0,oP1)
+        time.sleep(2)
+        
         #########################step2:put cylinder to a place######################
-        string = ' '.join(map(str, liangtong_xy_kmno4_givetoB))
+        string = ' '.join(map(str, liangtong_xy_kmno4_givetoA))
         fr5_B.F101_put_01(string, "yn" , "2" , False, is_display = False)
         fr5_B.MoveL(0.0, 0.0, 100.0)
         fr5_B.Go_to_start_zone()
         
         #########################step3:armA catch the cylinder to pump######################
+        input('=======')
         self.MoveGripper(1, 100, 50, 10, 10000, 1)  # open
         self.Go_to_start_zone()
-        string = ' '.join(map(str, liangtong_xy_output))
-        self.F101_catch_02(string, "yn" , "2" , False, is_display = False)
+        string = ' '.join(map(str, liangtong_xy_kmno4_getfromB))
+        self.F101_catch_02(string, "yn" , "2" , True, is_display = False)
         self.MoveL(0.0, 0.0, 300.0)
         # 去A准备放下量筒的位置
         p8_auto_weight = self.robot.GetForwardKin(j8_auto_weight)
@@ -629,7 +650,7 @@ class HNchemistry(fr5robot):
         time.sleep(2)
         # 把量筒放下
         string = ' '.join(map(str, liangtong_xy_kmno4_puttopump))
-        self.F101_put_01(string, "xn" , "2" , False, is_display = False)
+        self.F101_put_01(string, "xn" , "2" , True, is_display = False)
         self.MoveL(0.0,0.0,300.0)
         self.Go_to_start_zone()
         
